@@ -4,7 +4,7 @@ import java.net.URI;
 
 public interface ServiceRepository {
 
-	void create(String name, URI uri) throws Exception;
+	void create(String name, URI uri);
 
 	URI getServiceUri(String name);
 
