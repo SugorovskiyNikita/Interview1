@@ -1,54 +1,41 @@
 package ru.learn.db.impl;
 
 import ru.learn.db.interfaces.ServiceRepository;
+import ru.learn.entity.ServiceDiscovery;
+
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+
+import static ru.learn.util.Validation.*;
 
 public class ServiceImpl implements ServiceRepository {
 
-    private final Map<String, Set<URI>> memoryDb;
-    private static final int MAX_URIS_PER_NAME = 100;
+    private final Map<String, Set<ServiceDiscovery>> memoryDb;
+    private final Integer maxUrisPerName;
 
-    public ServiceImpl(Map<String, Set<URI>> memoryDb) {
+    public ServiceImpl(Map<String, Set<ServiceDiscovery>> memoryDb, int maxUrisPerName) {
         this.memoryDb = memoryDb;
+        this.maxUrisPerName = maxUrisPerName;
     }
 
     public void create(String name, URI uri) {
-        if (isValidName(name) && isValidUri(uri)) {
-            memoryDb.compute(name, (k, uris) -> {
-                if (uris == null) {
-                    uris = new HashSet<>();
-                }
-                if (uris.size() >= MAX_URIS_PER_NAME) {
-                    throw new IllegalStateException(String.format("Cannot add more than %d URIs for name: %s", MAX_URIS_PER_NAME, name));
-                }
-                uris.add(uri);
-                return uris;
-            });
-        } else {
-            throw new IllegalArgumentException(String.format("Service validation failed, %s, %s", name, uri));
-        }
+        validateName(name);
+        validateUri(uri);
+        checkDuplicateUri(memoryDb, uri);
+
+        Set<ServiceDiscovery> services = memoryDb.computeIfAbsent(name, k -> new HashSet<>());
+        validateUriLimit(services, maxUrisPerName);
+
+        memoryDb.computeIfAbsent(name, k -> new HashSet<>()).add(new ServiceDiscovery(name, uri));
     }
 
     public URI getServiceUri(String name) {
-        if (!isValidName(name)) {
-            throw new IllegalArgumentException(String.format("Name validation failed, %s", name));
-        }
+        validateName(name);
 
         return Optional.ofNullable(memoryDb.get(name))
-                .flatMap(service -> service.stream().findAny())
-                .orElseThrow(() -> new RuntimeException(String.format("Uri with this name not found, %s", name)));
-    }
-
-    private boolean isValidName(String name) {
-        return name != null && !name.isEmpty();
-    }
-
-    private boolean isValidUri(URI uri) {
-        return uri != null && uri.isAbsolute() && !uri.toString().isEmpty();
+                .flatMap(services -> services.stream().findAny())
+                .map(ServiceDiscovery::getUri)
+                .orElseThrow(() -> new RuntimeException(String.format("URI with this name not found, %s", name)));
     }
 }

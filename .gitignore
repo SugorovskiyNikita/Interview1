@@ -1,7 +1,7 @@
 ietarget/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
-!**/src/ServiceImplTest/**/target/
+!**/src/ServiceDiscoveryImplTest/**/target/
 
 ### IntelliJ IDEA ###
 .idea
@@ -26,7 +26,7 @@ ietarget/
 /.nb-gradle/
 build/
 !**/src/main/**/build/
-!**/src/ServiceImplTest/**/build/
+!**/src/ServiceDiscoveryImplTest/**/build/
 
 ### VS Code ###
 .vscode/
